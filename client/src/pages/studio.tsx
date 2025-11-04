@@ -18,6 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const parameterOptions = {
   tone: ['Professional', 'Casual', 'Dramatic', 'Upbeat', 'Serene', 'Energetic', 'Mysterious', 'Playful', 'Epic', 'Intimate', 'Whimsical', 'Dark'],
@@ -54,6 +56,8 @@ export default function Studio() {
   const [activeSceneId, setActiveSceneId] = useState('1');
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showPlatformModal, setShowPlatformModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
   const currentProject = projects.find(p => p.id === currentProjectId)!;
   const activeScene = currentProject.scenes.find(s => s.id === activeSceneId)!;
@@ -102,27 +106,49 @@ export default function Studio() {
     updateScene({ generatedPrompt: prompt });
   };
 
-  const generateAiPrompt = () => {
+  const generateAiPrompt = async () => {
     const { description, parameters } = activeScene;
-    let prompt = `A ${parameters.tone?.toLowerCase() || 'professional'} ${parameters.genre?.toLowerCase() || 'cinematic'} shot`;
     
-    if (parameters.timeOfDay) prompt += ` captured during ${parameters.timeOfDay.toLowerCase()}`;
-    if (description) prompt += `. ${description}`;
-    if (parameters.landscape) prompt += ` The scene is set in a ${parameters.landscape.toLowerCase()} environment`;
-    if (parameters.weather) prompt += ` with ${parameters.weather.toLowerCase()} weather conditions`;
-    if (parameters.cameraAngle) prompt += `. Filmed using ${parameters.cameraAngle.toLowerCase()} perspective`;
-    if (parameters.framing) prompt += ` with ${parameters.framing.toLowerCase()} framing`;
-    if (parameters.cameraMovement) prompt += `. Camera executes a ${parameters.cameraMovement.toLowerCase()}`;
-    if (parameters.lens) prompt += ` using ${parameters.lens.toLowerCase()} lens`;
-    if (parameters.lighting) prompt += `. The ${parameters.lighting.toLowerCase()} lighting`;
-    if (parameters.mood) prompt += ` creates a ${parameters.mood.toLowerCase()} atmosphere`;
-    if (parameters.colorGrading) prompt += `. ${parameters.colorGrading} color grading`;
-    if (parameters.motionStyle) prompt += ` with ${parameters.motionStyle.toLowerCase()}`;
-    if (parameters.duration) prompt += `. Duration: ${parameters.duration}`;
-    if (parameters.aspectRatio) prompt += `. Format: ${parameters.aspectRatio}`;
-    if (parameters.platform) prompt += `. Optimized for ${parameters.platform}`;
-    
-    updateScene({ generatedPrompt: prompt });
+    if (!description && Object.keys(parameters).length === 0) {
+      toast({
+        title: "Missing information",
+        description: "Please add a description or select some parameters first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await apiRequest('/api/generate-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description,
+          parameters,
+          mode: 'ai'
+        }),
+      });
+
+      const data = await response.json();
+      updateScene({ generatedPrompt: data.prompt });
+      
+      toast({
+        title: "Prompt generated!",
+        description: "AI-enhanced prompt is ready to use.",
+      });
+    } catch (error: any) {
+      console.error('Error generating AI prompt:', error);
+      toast({
+        title: "Generation failed",
+        description: error.message || "Failed to generate AI prompt. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleAddScene = () => {
@@ -352,10 +378,11 @@ export default function Studio() {
                 size="lg" 
                 className="flex-1 gap-2 text-base font-semibold"
                 onClick={activeScene.mode === 'ai' ? generateAiPrompt : generateManualPrompt}
+                disabled={isGenerating}
                 data-testid="button-generate"
               >
                 <Wand2 className="h-5 w-5" />
-                {activeScene.mode === 'ai' ? 'Generate AI Prompt' : 'Generate Prompt'}
+                {isGenerating ? 'Generating...' : (activeScene.mode === 'ai' ? 'Generate AI Prompt' : 'Generate Prompt')}
               </Button>
               
               {activeScene.generatedPrompt && (
