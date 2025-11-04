@@ -28,6 +28,18 @@ export interface SceneParameters {
   landscape?: string;
   lighting?: string;
   framing?: string;
+  cameraMovement?: string;
+  motionStyle?: string;
+  aspectRatio?: string;
+  duration?: string;
+  colorGrading?: string;
+  filmStock?: string;
+  lens?: string;
+  depth?: string;
+  transition?: string;
+  pacing?: string;
+  visualStyle?: string;
+  soundscape?: string;
 }
 
 export interface Scene {
@@ -37,6 +49,16 @@ export interface Scene {
   parameters: SceneParameters;
   generatedPrompt?: string;
   mode: 'manual' | 'ai';
+}
+
+export interface Favorite {
+  id: string;
+  name: string;
+  description?: string;
+  parameters: SceneParameters;
+  prompt?: string;
+  tags: string[];
+  createdAt: string;
 }
 
 export interface Project {
@@ -59,6 +81,18 @@ export const insertSceneSchema = z.object({
     landscape: z.string().optional(),
     lighting: z.string().optional(),
     framing: z.string().optional(),
+    cameraMovement: z.string().optional(),
+    motionStyle: z.string().optional(),
+    aspectRatio: z.string().optional(),
+    duration: z.string().optional(),
+    colorGrading: z.string().optional(),
+    filmStock: z.string().optional(),
+    lens: z.string().optional(),
+    depth: z.string().optional(),
+    transition: z.string().optional(),
+    pacing: z.string().optional(),
+    visualStyle: z.string().optional(),
+    soundscape: z.string().optional(),
   }),
   generatedPrompt: z.string().optional(),
   mode: z.enum(['manual', 'ai']),

@@ -1,6 +1,7 @@
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { Film, Settings, HelpCircle, Plus, FileDown } from "lucide-react";
+import { Film, Settings, HelpCircle, Plus, FileDown, Star, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "wouter";
 
 interface AppSidebarProps {
   onNewProject?: () => void;
@@ -8,6 +9,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ onNewProject, onExportAll }: AppSidebarProps) {
+  const [location] = useLocation();
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -23,6 +26,27 @@ export function AppSidebar({ onNewProject, onExportAll }: AppSidebarProps) {
       </SidebarHeader>
       
       <SidebarContent className="px-4">
+        <div className="space-y-2 mb-6">
+          <Link href="/">
+            <SidebarMenuButton 
+              className={location === '/' ? 'bg-sidebar-accent' : ''}
+              data-testid="link-studio"
+            >
+              <Video className="h-4 w-4" />
+              <span>Studio</span>
+            </SidebarMenuButton>
+          </Link>
+          <Link href="/favorites">
+            <SidebarMenuButton 
+              className={location === '/favorites' ? 'bg-sidebar-accent' : ''}
+              data-testid="link-favorites"
+            >
+              <Star className="h-4 w-4" />
+              <span>Favorites</span>
+            </SidebarMenuButton>
+          </Link>
+        </div>
+
         <div className="space-y-4">
           <Button 
             variant="default" 

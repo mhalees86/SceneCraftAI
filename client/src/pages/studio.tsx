@@ -5,23 +5,31 @@ import { DescriptionInput } from "@/components/description-input";
 import { ParameterSelect } from "@/components/parameter-select";
 import { OutputDisplay } from "@/components/output-display";
 import { ProjectSelector } from "@/components/project-selector";
+import { AdvancedParameters } from "@/components/advanced-parameters";
+import { CopySettingsModal } from "@/components/copy-settings-modal";
+import { PlatformExportModal } from "@/components/platform-export-modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wand2, Camera, Sun, Cloud, Mountain, Palette, Smile, Lightbulb, Frame, Video } from "lucide-react";
+import { Wand2, Camera, Sun, Cloud, Mountain, Palette, Smile, Lightbulb, Frame, Video, Upload, Copy } from "lucide-react";
 import type { Scene, Project, SceneParameters } from "@shared/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const parameterOptions = {
-  tone: ['Professional', 'Casual', 'Dramatic', 'Upbeat', 'Serene', 'Energetic', 'Mysterious', 'Playful'],
-  timeOfDay: ['Dawn', 'Morning', 'Noon', 'Afternoon', 'Golden Hour', 'Dusk', 'Night', 'Blue Hour'],
-  cameraAngle: ['Eye Level', 'Low Angle', 'High Angle', 'Bird\'s Eye', 'Dutch Angle', 'Over-the-Shoulder', 'POV'],
-  platform: ['YouTube', 'TikTok', 'Instagram Reels', 'Facebook', 'LinkedIn', 'Twitter', 'General'],
-  weather: ['Clear', 'Cloudy', 'Rainy', 'Snowy', 'Foggy', 'Stormy', 'Overcast', 'Sunny'],
-  genre: ['Documentary', 'Commercial', 'Cinematic', 'Vlog', 'Tutorial', 'Music Video', 'Short Film'],
-  mood: ['Happy', 'Sad', 'Tense', 'Calm', 'Exciting', 'Melancholic', 'Hopeful', 'Dark'],
-  landscape: ['Urban', 'Rural', 'Mountain', 'Beach', 'Forest', 'Desert', 'Indoor', 'Studio'],
-  lighting: ['Natural', 'Studio', 'Low Key', 'High Key', 'Silhouette', 'Backlit', 'Soft', 'Hard'],
-  framing: ['Close-up', 'Medium Shot', 'Wide Shot', 'Extreme Close-up', 'Full Shot', 'Two Shot', 'Establishing']
+  tone: ['Professional', 'Casual', 'Dramatic', 'Upbeat', 'Serene', 'Energetic', 'Mysterious', 'Playful', 'Epic', 'Intimate', 'Whimsical', 'Dark'],
+  timeOfDay: ['Dawn', 'Morning', 'Noon', 'Afternoon', 'Golden Hour', 'Dusk', 'Night', 'Blue Hour', 'Twilight', 'Midnight'],
+  cameraAngle: ['Eye Level', 'Low Angle', 'High Angle', 'Bird\'s Eye', 'Dutch Angle', 'Over-the-Shoulder', 'POV', 'Worm\'s Eye', 'Aerial'],
+  platform: ['YouTube', 'TikTok', 'Instagram Reels', 'Facebook', 'LinkedIn', 'Twitter', 'Veo 3', 'Sora 2', 'Runway', 'General'],
+  weather: ['Clear', 'Cloudy', 'Rainy', 'Snowy', 'Foggy', 'Stormy', 'Overcast', 'Sunny', 'Misty', 'Windy', 'Humid'],
+  genre: ['Documentary', 'Commercial', 'Cinematic', 'Vlog', 'Tutorial', 'Music Video', 'Short Film', 'Animation', 'Experimental'],
+  mood: ['Happy', 'Sad', 'Tense', 'Calm', 'Exciting', 'Melancholic', 'Hopeful', 'Dark', 'Joyful', 'Mysterious', 'Romantic', 'Intense'],
+  landscape: ['Urban', 'Rural', 'Mountain', 'Beach', 'Forest', 'Desert', 'Indoor', 'Studio', 'Cityscape', 'Countryside', 'Underwater', 'Space'],
+  lighting: ['Natural', 'Studio', 'Low Key', 'High Key', 'Silhouette', 'Backlit', 'Soft', 'Hard', 'Dramatic', 'Ambient', 'Neon', 'Candlelit'],
+  framing: ['Close-up', 'Medium Shot', 'Wide Shot', 'Extreme Close-up', 'Full Shot', 'Two Shot', 'Establishing', 'Cowboy Shot', 'Long Shot']
 };
 
 export default function Studio() {
@@ -44,6 +52,8 @@ export default function Studio() {
 
   const [currentProjectId, setCurrentProjectId] = useState('1');
   const [activeSceneId, setActiveSceneId] = useState('1');
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [showPlatformModal, setShowPlatformModal] = useState(false);
 
   const currentProject = projects.find(p => p.id === currentProjectId)!;
   const activeScene = currentProject.scenes.find(s => s.id === activeSceneId)!;
@@ -79,15 +89,40 @@ export default function Studio() {
     if (parameters.framing) parts.push(`Framing: ${parameters.framing}`);
     if (parameters.mood) parts.push(`Mood: ${parameters.mood}`);
     if (parameters.tone) parts.push(`Tone: ${parameters.tone}`);
+    if (parameters.cameraMovement) parts.push(`Movement: ${parameters.cameraMovement}`);
+    if (parameters.motionStyle) parts.push(`Motion: ${parameters.motionStyle}`);
+    if (parameters.aspectRatio) parts.push(`Aspect Ratio: ${parameters.aspectRatio}`);
+    if (parameters.duration) parts.push(`Duration: ${parameters.duration}`);
+    if (parameters.colorGrading) parts.push(`Color: ${parameters.colorGrading}`);
+    if (parameters.filmStock) parts.push(`Film Stock: ${parameters.filmStock}`);
+    if (parameters.lens) parts.push(`Lens: ${parameters.lens}`);
+    if (parameters.depth) parts.push(`Depth: ${parameters.depth}`);
     
     const prompt = parts.filter(p => p).join('. ');
     updateScene({ generatedPrompt: prompt });
   };
 
   const generateAiPrompt = () => {
-    const mockPrompt = `A ${activeScene.parameters.tone?.toLowerCase() || 'professional'} ${activeScene.parameters.genre?.toLowerCase() || 'cinematic'} shot captured during ${activeScene.parameters.timeOfDay?.toLowerCase() || 'golden hour'}. ${activeScene.description} The scene is set in a ${activeScene.parameters.landscape?.toLowerCase() || 'urban'} environment with ${activeScene.parameters.weather?.toLowerCase() || 'clear'} weather conditions. Filmed using ${activeScene.parameters.cameraAngle?.toLowerCase() || 'eye level'} perspective with ${activeScene.parameters.framing?.toLowerCase() || 'medium shot'} framing. The ${activeScene.parameters.lighting?.toLowerCase() || 'natural'} lighting creates a ${activeScene.parameters.mood?.toLowerCase() || 'calm'} atmosphere, perfect for ${activeScene.parameters.platform || 'general'} platform distribution.`;
+    const { description, parameters } = activeScene;
+    let prompt = `A ${parameters.tone?.toLowerCase() || 'professional'} ${parameters.genre?.toLowerCase() || 'cinematic'} shot`;
     
-    updateScene({ generatedPrompt: mockPrompt });
+    if (parameters.timeOfDay) prompt += ` captured during ${parameters.timeOfDay.toLowerCase()}`;
+    if (description) prompt += `. ${description}`;
+    if (parameters.landscape) prompt += ` The scene is set in a ${parameters.landscape.toLowerCase()} environment`;
+    if (parameters.weather) prompt += ` with ${parameters.weather.toLowerCase()} weather conditions`;
+    if (parameters.cameraAngle) prompt += `. Filmed using ${parameters.cameraAngle.toLowerCase()} perspective`;
+    if (parameters.framing) prompt += ` with ${parameters.framing.toLowerCase()} framing`;
+    if (parameters.cameraMovement) prompt += `. Camera executes a ${parameters.cameraMovement.toLowerCase()}`;
+    if (parameters.lens) prompt += ` using ${parameters.lens.toLowerCase()} lens`;
+    if (parameters.lighting) prompt += `. The ${parameters.lighting.toLowerCase()} lighting`;
+    if (parameters.mood) prompt += ` creates a ${parameters.mood.toLowerCase()} atmosphere`;
+    if (parameters.colorGrading) prompt += `. ${parameters.colorGrading} color grading`;
+    if (parameters.motionStyle) prompt += ` with ${parameters.motionStyle.toLowerCase()}`;
+    if (parameters.duration) prompt += `. Duration: ${parameters.duration}`;
+    if (parameters.aspectRatio) prompt += `. Format: ${parameters.aspectRatio}`;
+    if (parameters.platform) prompt += `. Optimized for ${parameters.platform}`;
+    
+    updateScene({ generatedPrompt: prompt });
   };
 
   const handleAddScene = () => {
@@ -139,6 +174,26 @@ export default function Studio() {
     setActiveSceneId(newSceneId);
   };
 
+  const handleCopySettings = (sourceSceneId: string, targetSceneId: string, includeDescription: boolean) => {
+    const sourceScene = currentProject.scenes.find(s => s.id === sourceSceneId);
+    if (!sourceScene) return;
+
+    setProjects(projects.map(project => {
+      if (project.id !== currentProjectId) return project;
+      return {
+        ...project,
+        scenes: project.scenes.map(scene => {
+          if (scene.id !== targetSceneId) return scene;
+          return {
+            ...scene,
+            parameters: { ...sourceScene.parameters },
+            ...(includeDescription && { description: sourceScene.description })
+          };
+        })
+      };
+    }));
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <div className="border-b border-border px-6 py-4">
@@ -158,14 +213,33 @@ export default function Studio() {
         </div>
       </div>
 
-      <SceneTabs
-        scenes={currentProject.scenes}
-        activeSceneId={activeSceneId}
-        onSceneSelect={setActiveSceneId}
-        onAddScene={handleAddScene}
-        onDeleteScene={handleDeleteScene}
-        onDuplicateScene={handleDuplicateScene}
-      />
+      <div className="flex items-center justify-between border-b border-border">
+        <SceneTabs
+          scenes={currentProject.scenes}
+          activeSceneId={activeSceneId}
+          onSceneSelect={setActiveSceneId}
+          onAddScene={handleAddScene}
+          onDeleteScene={handleDeleteScene}
+          onDuplicateScene={handleDuplicateScene}
+        />
+        
+        <div className="px-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" data-testid="button-scene-options">
+                <Copy className="h-4 w-4 mr-2" />
+                Scene Options
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowCopyModal(true)} data-testid="menu-copy-settings">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <div className="flex-1 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full p-6">
@@ -245,6 +319,11 @@ export default function Studio() {
                     icon={Frame}
                   />
                 </div>
+                
+                <AdvancedParameters
+                  parameters={activeScene.parameters}
+                  onParameterChange={updateParameter}
+                />
               </TabsContent>
 
               <TabsContent value="location" className="space-y-4 mt-4">
@@ -267,16 +346,30 @@ export default function Studio() {
               </TabsContent>
             </Tabs>
 
-            <Button 
-              variant="default" 
-              size="lg" 
-              className="w-full gap-2"
-              onClick={activeScene.mode === 'ai' ? generateAiPrompt : generateManualPrompt}
-              data-testid="button-generate"
-            >
-              <Wand2 className="h-4 w-4" />
-              {activeScene.mode === 'ai' ? 'Generate AI Command' : 'Generate Command'}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="default" 
+                size="lg" 
+                className="flex-1 gap-2 text-base font-semibold"
+                onClick={activeScene.mode === 'ai' ? generateAiPrompt : generateManualPrompt}
+                data-testid="button-generate"
+              >
+                <Wand2 className="h-5 w-5" />
+                {activeScene.mode === 'ai' ? 'Generate AI Prompt' : 'Generate Prompt'}
+              </Button>
+              
+              {activeScene.generatedPrompt && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setShowPlatformModal(true)}
+                  data-testid="button-send-platform"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Send to Platform
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-auto">
@@ -289,6 +382,20 @@ export default function Studio() {
           </div>
         </div>
       </div>
+
+      <CopySettingsModal
+        open={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        scenes={currentProject.scenes}
+        currentSceneId={activeSceneId}
+        onCopySettings={handleCopySettings}
+      />
+
+      <PlatformExportModal
+        open={showPlatformModal}
+        onClose={() => setShowPlatformModal(false)}
+        prompt={activeScene.generatedPrompt || ''}
+      />
     </div>
   );
 }
